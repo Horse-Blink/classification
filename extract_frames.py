@@ -16,14 +16,26 @@ df=dict(sorted(df.items())) # sorting the annotations in alphabetical order
 df['Guide']['Video']=df['Guide']['Video'].map(lambda x : x.rstrip())
 
 labels_dict=dict()
+
+try:
+    os.mkdir("./All Frames/")         
+   
+except:
+    pass
+    
 for vids in df:
-    print (vids)
+    print (vids) #type(vids)=str
+    
+    
     
     
     if vids=="Guide":
+        print("doing nothing with guide")
         
         pass
+        
     else:
+        print("creating paths")
         path="./videos/"+vids
         video_length=int(df['Guide']['Total frame count'].loc[df['Guide']['Video']==vids]) 
         
@@ -38,19 +50,20 @@ for vids in df:
         
         df[vids]=df[vids][df[vids]['Class(F=Full,H=Half)']=='F'].reset_index()
         
-        # loop through each df and set the array to 
-        for row in range(len(df[vids])):            
-            # set the eye closed frames to 1 and leave rest at 0
-            labels_dict[vids][int(df[vids]['Eye Closed Frame'][row])-1 : int(df[vids]['Eye opening'][row])+4]=1
-        count=0 
         try:
-            os.mkdir("./Eyes Open/")
-            os.mkdir("./Blinking/")
-            
-            
+            os.mkdir(f"./All Frames/{vids[:-4]}")         
+           
         except:
             pass
         
+        # loop through each df and set the array to 
+        for row in range(len(df[vids])):            
+            # set the eye closed frames to 1 and leave rest at 0
+            labels_dict[vids][int(df[vids]['Eye Closed Frame'][row]) : int(df[vids]['Eye opening'][row])]=1
+        
+        np.save(f"./All Frames/{vids[:-4]}/label.npy",labels_dict[vids])
+        
+        count=0 
         time_start = time.time()
         save_eq=0
         skip_counter=0
@@ -63,14 +76,10 @@ for vids in df:
             if not flag:
                 continue
             
-            elif labels_dict[vids][count]==1:                
-                cv2.imwrite("./Blink Frames/" +vids+ "%#05d.jpg" % (count+1), frame)
+            else:               
+                cv2.imwrite(f"./All Frames/{vids[:-4]}/{count+1:05d}.jpg", frame)
                 save_eq+=1
-            elif skip_counter<5:
-                skip_counter+=1
-            elif save_eq>=1:
-                cv2.imwrite("./Eyes Open Frames/"+vids+ "%#05d.jpg" % (count+1), frame)
-                save_eq -=1
+      
                 
             
             
