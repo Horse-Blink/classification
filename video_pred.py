@@ -178,19 +178,23 @@ with torch.no_grad():
             test_data[1].to(device),
         )
         
-        pred = model(test_images)[0]
+        pred = y_pred_trans(model(test_images)[0])
         
         print(pred, i,'/', len(test_loader))
         
         pred=pred.argmax(dim=0)
         
-        # for i in range(len(pred)):            
+        ##for i in range(len(pred)):            
         y_pred.append(pred.cpu())
+      
         
-y_pred_avg=np.convolve(np.array(y_pred),np.ones(5),'same')
-# y_pred=np.array(y_pred)
-y_pred=np.convolve(np.array(y_pred),np.ones(5),'same')
+        
+        
+y_pred_avg=np.convolve(np.array(y_pred),np.ones(5),'same')/5
+y_pred=np.array(y_pred)
+
 y_pred=(y_pred>0.5).astype(int)  
+y_pred_avg=(y_pred_avg>0.5).astype(int)
 y_true=np.array(ground_truth)
 
 print("len( y_pred)=", len( y_pred), "len(y_true)=",len(y_true))
