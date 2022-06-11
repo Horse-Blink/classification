@@ -48,27 +48,28 @@ for vids in df:
         #set up an array to save blinking labels- this is later used to extract blink frames 
         labels_dict[vids]=np.zeros(video_length+1)
         
-        df[vids]=df[vids][df[vids]['Class(F=Full,H=Half)']=='F'].reset_index()
+        # df[vids]=df[vids][df[vids]['Class(F=Full,H=Half)']=='F'].reset_index()
         
         try:
-            os.mkdir(f"./All Frames/{vids[:-4]}")         
-           
+            os.mkdir("./Eyes Open 22/")
+            os.mkdir("./Blinking 22/")
         except:
             pass
         
         # loop through each df and set the array to 
         for row in range(len(df[vids])):            
-            # set the eye closed frames to 1 and leave rest at 0
-            labels_dict[vids][int(df[vids]['Eye Closed Frame'][row]) : int(df[vids]['Eye opening'][row])]=1
+            # set the eye closed frames to 1 and leave rest at 0 by reading from the excel file
+            if int(df[vids]['Eye Fully Open'][row])-2>int(df[vids]['Eye closing Frame'][row])+2:
+                labels_dict[vids][int(df[vids]['Eye closing Frame'][row])+2 : int(df[vids]['Eye Fully Open'][row])-2]=1
         
-        np.save(f"./All Frames/{vids[:-4]}/label.npy",labels_dict[vids])
+        # np.save(f"./All Frames/{vids[:-4]}/label.npy",labels_dict[vids]) # only necessary if saving all frames
         
         count=0 
         time_start = time.time()
         save_eq=0
         skip_counter=0
         while cap.isOpened():
-            print(count, "/",video_length)
+            # print(count, "/",video_length)
             flag,frame=cap.read()            
             
             
@@ -76,10 +77,17 @@ for vids in df:
             if not flag:
                 continue
             
-            else:               
-                cv2.imwrite(f"./All Frames/{vids[:-4]}/{count+1:05d}.jpg", frame)
+            elif labels_dict[vids][count]==1:                
+                cv2.imwrite("./Blinking 22/" +vids+ "%#05d.jpg" % (count+1), frame)
                 save_eq+=1
-      
+                print("saving blink frame", count, "/", video_length)
+                last_blink_frame=count           
+            elif save_eq>=1:
+                if count>=(last_blink_frame+5):
+                    if labels_dict[vids][count]==0 : 
+                        cv2.imwrite("./Eyes Open 22/"+vids+ "%#05d.jpg" % (count+1), frame)
+                        save_eq -=1
+                        print("eye open frame", count,"/",video_length)
                 
             
             
@@ -93,7 +101,7 @@ for vids in df:
                 # Print stats
                 print ("Done extracting frames.\n%d frames extracted" % count)
                 print ("It took %d seconds forconversion." % (time_end-time_start))
-                break  
+                break 
    
         continue            
                
